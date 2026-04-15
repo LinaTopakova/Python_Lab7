@@ -1,12 +1,17 @@
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 tasks_storage: Dict[str, Dict[str, Any]] = {}
 
-def create_task() -> str:
+def create_task(callback_url: Optional[str] = None) -> str:
     from uuid import uuid4
     task_id = str(uuid4())
-    tasks_storage[task_id] = {"status": "pending", "result": None}
+    tasks_storage[task_id] = {
+        "status": "pending",
+        "result": None,
+        "callback_url": callback_url
+    }
     return task_id
+
 
 def update_task(task_id: str, status: str, result: Any = None):
     if task_id in tasks_storage:
