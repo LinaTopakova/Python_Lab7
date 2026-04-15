@@ -1,6 +1,7 @@
+import asyncio
 from fastapi import APIRouter, BackgroundTasks, HTTPException
 from app.storage import create_task, get_task
-from app.tasks import long_running_task
+from app.tasks import long_running_task, sync_cpu_bound
 
 notify_router = APIRouter(prefix="/notify", tags=["notifications"])
 
@@ -28,3 +29,8 @@ async def get_task_status(task_id: str):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
     return task
+
+@tasks_router.post("/compute")
+async def compute_sync(data: dict):
+    result = await asyncio.to_thread(sync_cpu_bound, data)
+    return result
