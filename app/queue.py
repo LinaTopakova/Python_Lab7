@@ -1,6 +1,7 @@
 import asyncio
 from typing import Callable, Any, Dict
 from app.storage import update_task
+from app.logger import logger
 
 class TaskQueue:
     def __init__(self):
@@ -10,12 +11,15 @@ class TaskQueue:
     async def worker(self):
         while True:
             task_func, task_id, input_data = await self.queue.get()
+            logger.info(f"Processing task {task_id} from queue")
             try:
                 await task_func(task_id, input_data)
             except Exception as e:
                 update_task(task_id, "error", {"error": str(e)})
+                logger.exception(f"Task {task_id} failed in worker")
             finally:
                 self.queue.task_done()
+                logger.info(f"Finished processing task {task_id}")
 
     async def start(self):
         self.worker_task = asyncio.create_task(self.worker())
