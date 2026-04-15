@@ -1,6 +1,6 @@
 import asyncio
 from typing import Callable, Any, Dict
-from app.storage import update_task
+from app.redis_storage import storage   
 from app.logger import logger
 
 class TaskQueue:
@@ -15,7 +15,7 @@ class TaskQueue:
             try:
                 await task_func(task_id, input_data)
             except Exception as e:
-                update_task(task_id, "error", {"error": str(e)})
+                await storage.update_task(task_id, "error", {"error": str(e)})
                 logger.exception(f"Task {task_id} failed in worker")
             finally:
                 self.queue.task_done()

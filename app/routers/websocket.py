@@ -1,7 +1,7 @@
 from fastapi import APIRouter, WebSocket, WebSocketDisconnect
 import asyncio
 from app.logger import logger
-from app.storage import get_task
+from app.redis_storage import storage   
 
 router = APIRouter(tags=["websocket"])
 
@@ -11,7 +11,7 @@ async def websocket_task_status(websocket: WebSocket, task_id: str):
     logger.info(f"WebSocket connection accepted for task {task_id}")
     try:
         while True:
-            task = get_task(task_id)
+            task = await storage.get_task(task_id)   # <-- асинхронно
             if not task:
                 logger.warning(f"WebSocket: Task {task_id} not found")
                 await websocket.send_json({"error": "Task not found"})

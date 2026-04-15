@@ -2,7 +2,7 @@ import asyncio
 import time
 import httpx
 from app.logger import logger
-from app.storage import update_task, get_task
+from app.redis_storage import storage   # <-- изменён импорт
 
 async def send_callback(callback_url: str, result: dict, max_retries: int = 3):
     async with httpx.AsyncClient() as client:
@@ -26,12 +26,12 @@ async def long_running_task(task_id: str, input_data: dict):
         total_steps = 10
         for step in range(1, total_steps + 1):
             await asyncio.sleep(1)
-            update_task(task_id, "running", {"progress": step, "total": total_steps})
+            await storage.update_task(task_id, "running", {"progress": step, "total": total_steps})   # <-- асинхронно
             logger.debug(f"Task {task_id} progress: {step}/{total_steps}")
 
         result = {"output": f"Processed {input_data.get('name', 'unknown')}"}
-        update_task(task_id, "completed", result)
-        task_info = get_task(task_id)
+        await storage.update_task(task_id, "completed", result)   # <-- асинхронно
+        task_info = await storage.get_task(task_id)               # <-- асинхронно
         logger.info(f"Task {task_id} completed with result: {result}")
 
         if task_info and task_info.get("callback_url"):
@@ -39,7 +39,7 @@ async def long_running_task(task_id: str, input_data: dict):
 
     except Exception as e:
         logger.exception(f"Task {task_id} failed with error")
-        update_task(task_id, "error", {"error": str(e)})
+        await storage.update_task(task_id, "error", {"error": str(e)})   # <-- асинхронно
 
 def sync_cpu_bound(data: dict) -> dict:
     time.sleep(3)
